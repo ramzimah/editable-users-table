@@ -1,7 +1,9 @@
+import EditableTable from "./components/EditableTable";
+
 function App() {
   return (
     <div>
-      <h1>Editable Table</h1>
+      <EditableTable />
     </div>
   );
 }
