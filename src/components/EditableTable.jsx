@@ -1,17 +1,20 @@
 import { useState, useEffect } from "react";
-import { Trash2, Inbox, Loader } from "lucide-react";
-import { getUsers } from "../services/users";
+import { Trash2, Inbox, Loader, Plus } from "lucide-react";
+import { getUsers, addUser } from "../services/users";
+import { toast } from "sonner";
 
 const columns = [
-  { key: "name", label: "Name" },
-  { key: "age", label: "Age" },
-  { key: "email", label: "Email" },
+  { key: "name", label: "Name", type: "text" },
+  { key: "age", label: "Age", type: "number" },
+  { key: "email", label: "Email", type: "email" },
 ];
 
 export default function EditableTable() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [newRow, setNewRow] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -28,6 +31,60 @@ export default function EditableTable() {
 
     fetchUsers();
   }, []);
+
+  const addRow = () => {
+    //check if there's already a new row being added
+    if (newRow) {
+      toast.error(
+        "Please finish editing the current row before adding a new one."
+      );
+      return;
+    }
+    const emptyRow = {
+      name: "",
+      email: "",
+      age: "",
+    };
+    setNewRow(emptyRow);
+  };
+
+  const saveNewRow = async () => {
+    if (!newRow.name.trim() || !newRow.email.trim() || !newRow.age) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const savedUser = await addUser({
+        name: newRow.name.trim(),
+        email: newRow.email.trim(),
+        age: parseInt(newRow.age),
+      });
+
+      //add to rows and clear newRow
+      setRows((prevRows) => [savedUser, ...prevRows]);
+      setNewRow(null);
+      toast.success("User added successfully!");
+    } catch (err) {
+      toast.error("Failed to save user. Please try again.");
+      console.error("Save error:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancelNewRow = () => {
+    setNewRow(null);
+  };
+
+  const updateNewRow = (field, value) => {
+    setNewRow((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   if (loading) {
     return (
@@ -57,6 +114,17 @@ export default function EditableTable() {
       <p className="text-gray-600 mb-4">
         Manage your users data with add, delete, undo, and redo functionality
       </p>
+
+      <div className="mb-4">
+        <button
+          onClick={addRow}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Add Row
+        </button>
+      </div>
+
       <table className="w-full text-sm text-left text-gray-700 border border-gray-200 rounded-lg">
         <thead className="text-xs uppercase bg-gray-100 text-gray-600">
           <tr>
@@ -69,7 +137,45 @@ export default function EditableTable() {
           </tr>
         </thead>
         <tbody>
-          {!rows.length ? (
+          {newRow && (
+            <tr className="bg-blue-50 hover:bg-blue-100 transition">
+              {columns.map((col) => (
+                <td
+                  key={col.key}
+                  className="px-4 py-3 border-b border-gray-200"
+                >
+                  <input
+                    type={col.type}
+                    value={newRow[col.key]}
+                    onChange={(e) => updateNewRow(col.key, e.target.value)}
+                    placeholder={`Enter ${col.label}`}
+                    className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    disabled={saving}
+                  />
+                </td>
+              ))}
+              <td className="px-4 py-3 text-center border-b border-gray-200">
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={saveNewRow}
+                    disabled={saving}
+                    className="bg-green-100 text-green-600 px-3 py-1 rounded hover:bg-green-200 transition text-xs disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={cancelNewRow}
+                    disabled={saving}
+                    className="bg-gray-100 text-gray-600 px-3 py-1 rounded hover:bg-gray-200 transition text-xs disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </td>
+            </tr>
+          )}
+
+          {!rows.length && !newRow ? (
             <tr>
               <td
                 colSpan={columns.length + 1}
