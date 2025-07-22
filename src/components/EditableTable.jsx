@@ -205,7 +205,7 @@ export default function EditableTable() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto p-6 mt-10 bg-white shadow-lg rounded-2xl">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 mt-4 sm:mt-10 bg-white shadow-lg rounded-2xl">
         <div className="flex flex-col items-center justify-center py-20">
           <Loader className="w-8 h-8 animate-spin text-blue-500 mb-4" />
           <span className="text-gray-600">Loading users...</span>
@@ -216,132 +216,146 @@ export default function EditableTable() {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto p-6 mt-10 bg-white shadow-lg rounded-2xl">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 mt-4 sm:mt-10 bg-white shadow-lg rounded-2xl">
         <div className="flex flex-col items-center justify-center py-20">
           <div className="text-red-500 mb-4">❌</div>
-          <span className="text-red-600">{error}</span>
+          <span className="text-red-600 text-center px-4">{error}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 mt-10 bg-white shadow-lg rounded-2xl">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">📝 Users</h1>
-      <p className="text-gray-600 mb-4">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 mt-4 sm:mt-10 bg-white shadow-lg rounded-2xl">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">
+        📝 Users
+      </h1>
+      <p className="text-sm sm:text-base text-gray-600 mb-4">
         Manage your users data with add, delete, undo, and redo functionality
       </p>
 
-      <div className="flex gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4">
         <button
           onClick={addRow}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 cursor-pointer"
+          className="bg-green-600 text-white px-3 sm:px-4 py-2 rounded hover:bg-green-700 cursor-pointer text-sm sm:text-base"
         >
           <Plus className="inline-block w-4 h-4 mr-1" /> Add Row
         </button>
         <button
           onClick={handleUndo}
           disabled={!undoStack.length}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm sm:text-base"
         >
           <Undo className="inline-block w-4 h-4 mr-1" /> Undo
         </button>
         <button
           onClick={handleRedo}
           disabled={!redoStack.length}
-          className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="bg-purple-500 text-white px-3 sm:px-4 py-2 rounded hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm sm:text-base"
         >
           <Redo className="inline-block w-4 h-4 mr-1" /> Redo
         </button>
       </div>
 
-      <table className="w-full text-sm text-left text-gray-700 border border-gray-200 rounded-lg">
-        <thead className="text-xs uppercase bg-gray-100 text-gray-600">
-          <tr>
-            {columns.map((col) => (
-              <th key={col.key} className="px-4 py-3 capitalize">
-                {col.label}
-              </th>
-            ))}
-            <th className="px-4 py-3 text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {newRow && (
-            <tr className="bg-blue-50 hover:bg-blue-100 transition">
-              {columns.map((col) => (
-                <td
-                  key={col.key}
-                  className="px-4 py-3 border-b border-gray-200"
-                >
-                  <input
-                    name={col.key}
-                    type={col.type}
-                    value={newRow[col.key]}
-                    onChange={(e) => updateNewRow(col.key, e.target.value)}
-                    placeholder={`Enter ${col.label}`}
-                    className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                    disabled={isSaving}
-                  />
-                </td>
-              ))}
-              <td className="px-4 py-3 text-center border-b border-gray-200">
-                <div className="flex gap-2 justify-center">
-                  <button
-                    onClick={saveNewRow}
-                    disabled={isSaving}
-                    className="bg-green-100 text-green-600 px-3 py-1 rounded hover:bg-green-200 transition text-xs disabled:opacity-50"
-                  >
-                    {isSaving ? "Saving..." : "Save"}
-                  </button>
-                  <button
-                    onClick={cancelNewRow}
-                    disabled={isSaving}
-                    className="bg-gray-100 text-gray-600 px-3 py-1 rounded hover:bg-gray-200 transition text-xs disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </td>
-            </tr>
-          )}
-
-          {!rows.length && !newRow ? (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left text-gray-700 border border-gray-200 rounded-lg min-w-[600px]">
+          <thead className="text-xs uppercase bg-gray-100 text-gray-600">
             <tr>
-              <td
-                colSpan={columns.length + 1}
-                className="text-center py-10 text-gray-400"
-              >
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <Inbox className="w-6 h-6" />
-                  <span>No data available yet</span>
-                </div>
-              </td>
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className="px-3 sm:px-4 py-3 capitalize whitespace-nowrap"
+                >
+                  {col.label}
+                </th>
+              ))}
+              <th className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
+                Actions
+              </th>
             </tr>
-          ) : (
-            rows.map((row) => (
-              <tr key={row.id} className="bg-white hover:bg-gray-50 transition">
+          </thead>
+          <tbody>
+            {newRow && (
+              <tr className="bg-blue-50 hover:bg-blue-100 transition">
                 {columns.map((col) => (
                   <td
                     key={col.key}
-                    className="px-4 py-3 border-b border-gray-200"
+                    className="px-3 sm:px-4 py-3 border-b border-gray-200"
                   >
-                    {row[col.key]}
+                    <input
+                      name={col.key}
+                      type={col.type}
+                      value={newRow[col.key]}
+                      onChange={(e) => updateNewRow(col.key, e.target.value)}
+                      placeholder={`Enter ${col.label}`}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm min-w-0"
+                      disabled={isSaving}
+                    />
                   </td>
                 ))}
-                <td className="px-4 py-3 text-center border-b border-gray-200">
-                  <button
-                    className="text-red-600 px-3 py-1 rounded hover:bg-red-200 transition"
-                    onClick={() => handleDeleteUser(row)}
-                  >
-                    <Trash2 className="inline-block w-4 h-4 cursor-pointer" />
-                  </button>
+                <td className="px-3 sm:px-4 py-3 text-center border-b border-gray-200">
+                  <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 justify-center">
+                    <button
+                      onClick={saveNewRow}
+                      disabled={isSaving}
+                      className="bg-green-100 text-green-600 px-2 sm:px-3 py-1 rounded hover:bg-green-200 transition text-xs disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {isSaving ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      onClick={cancelNewRow}
+                      disabled={isSaving}
+                      className="bg-gray-100 text-gray-600 px-2 sm:px-3 py-1 rounded hover:bg-gray-200 transition text-xs disabled:opacity-50 whitespace-nowrap"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            )}
+
+            {!rows.length && !newRow ? (
+              <tr>
+                <td
+                  colSpan={columns.length + 1}
+                  className="text-center py-10 text-gray-400"
+                >
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Inbox className="w-6 h-6" />
+                    <span className="text-sm sm:text-base">
+                      No data available yet
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="bg-white hover:bg-gray-50 transition"
+                >
+                  {columns.map((col) => (
+                    <td
+                      key={col.key}
+                      className="px-3 sm:px-4 py-3 border-b border-gray-200 break-words"
+                    >
+                      {row[col.key]}
+                    </td>
+                  ))}
+                  <td className="px-3 sm:px-4 py-3 text-center border-b border-gray-200">
+                    <button
+                      className="text-red-600 px-2 sm:px-3 py-1 rounded hover:bg-red-200 transition"
+                      onClick={() => handleDeleteUser(row)}
+                    >
+                      <Trash2 className="inline-block w-4 h-4 cursor-pointer" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
