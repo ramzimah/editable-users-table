@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Trash2, Inbox, Loader, Plus, TriangleAlert } from "lucide-react";
+import { Trash2, Inbox, Loader, Plus, TriangleAlert, Undo } from "lucide-react";
 import { getUsers, addUser, deleteUser } from "../services/users";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -26,6 +26,7 @@ export default function EditableTable() {
   const [error, setError] = useState(null);
   const [newRow, setNewRow] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [undoStack, setUndoStack] = useState([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -33,7 +34,7 @@ export default function EditableTable() {
         setIsLoading(true);
         const users = await getUsers();
         setRows(users);
-      } catch (err) {
+      } catch {
         setError("Something went wrong while fetching users.");
       } finally {
         setIsLoading(false);
@@ -77,11 +78,11 @@ export default function EditableTable() {
 
       //add to rows and clear newRow
       setRows((prevRows) => [savedUser, ...prevRows]);
+      setUndoStack((prev) => [...prev, { type: "add", row: savedUser }]);
       setNewRow(null);
       toast.success("User added successfully!");
-    } catch (err) {
+    } catch {
       toast.error("Failed to save user. Please try again.");
-      console.error("Save error:", err);
     } finally {
       setIsSaving(false);
     }
@@ -109,13 +110,28 @@ export default function EditableTable() {
           try {
             await deleteUser(user.id);
             setRows((prevRows) => prevRows.filter((row) => row.id !== user.id));
+            setUndoStack((prev) => [...prev, { type: "delete", row: user }]);
             toast.success("User deleted successfully!");
-          } catch (err) {
+          } catch {
             toast.error("Failed to delete user. Please try again.");
           }
         },
       },
     });
+  };
+
+  const handleUndo = async () => {
+    const lastAction = undoStack.pop();
+    if (!lastAction) return;
+    setUndoStack([...undoStack]);
+
+    if (lastAction.type === "add") {
+      await deleteUser(lastAction.row.id);
+      setRows((prev) => prev.filter((row) => row.id !== lastAction.row.id));
+    } else if (lastAction.type === "delete") {
+      const response = await addUser(lastAction.row);
+      setRows((prev) => [response, ...prev]);
+    }
   };
 
   if (isLoading) {
@@ -147,13 +163,19 @@ export default function EditableTable() {
         Manage your users data with add, delete, undo, and redo functionality
       </p>
 
-      <div className="mb-4">
+      <div className="flex gap-4 mb-4">
         <button
           onClick={addRow}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 cursor-pointer"
         >
-          <Plus className="w-4 h-4" />
-          Add Row
+          <Plus className="inline-block w-4 h-4 mr-1" /> Add Row
+        </button>
+        <button
+          onClick={handleUndo}
+          disabled={!undoStack.length}
+          className="bg-blue-600 text-white px-4 py-2 rounded bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          <Undo className="inline-block w-4 h-4 mr-1" /> Undo
         </button>
       </div>
 
