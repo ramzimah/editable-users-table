@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Trash2, Inbox, Loader, Plus } from "lucide-react";
-import { getUsers, addUser } from "../services/users";
+import { Trash2, Inbox, Loader, Plus, TriangleAlert } from "lucide-react";
+import { getUsers, addUser, deleteUser } from "../services/users";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -97,6 +97,26 @@ export default function EditableTable() {
       ...prev,
       [field]: value,
     }));
+  };
+  const handleDeleteUser = (user) => {
+    toast(`Delete "${user.name}"?`, {
+      description: "Are you sure you want to delete this user?",
+      duration: 3000,
+      icon: <TriangleAlert className="w-6 h-6 text-red-500" />,
+      position: "top-center",
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          try {
+            await deleteUser(user.id);
+            setRows((prevRows) => prevRows.filter((row) => row.id !== user.id));
+            toast.success("User deleted successfully!");
+          } catch (err) {
+            toast.error("Failed to delete user. Please try again.");
+          }
+        },
+      },
+    });
   };
 
   if (loading) {
@@ -213,7 +233,10 @@ export default function EditableTable() {
                   </td>
                 ))}
                 <td className="px-4 py-3 text-center border-b border-gray-200">
-                  <button className="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 transition">
+                  <button
+                    className="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 transition"
+                    onClick={() => handleDeleteUser(row)}
+                  >
                     <Trash2 className="inline-block w-4 h-4 cursor-pointer" />
                   </button>
                 </td>

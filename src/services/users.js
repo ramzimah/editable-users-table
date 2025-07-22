@@ -17,3 +17,12 @@ export const addUser = async (user) => {
     throw new Error("Failed to add user: " + error.message);
   }
 };
+
+export const deleteUser = async (userId) => {
+  try {
+    const response = await api.delete(`/api/v1/users/${userId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to delete user: " + error.message);
+  }
+};
