@@ -8,12 +8,15 @@ import {
   Undo,
   Redo,
 } from "lucide-react";
-import { getUsers, addUser, deleteUser } from "../services/users";
+import { getUsers, addUser, deleteUser } from "../api/users";
 import { toast } from "sonner";
 import { z } from "zod";
 
 const userSchema = z.object({
-  name: z.string().min(5, "Please enter a valid name (at least 5 characters)"),
+  name: z
+    .string()
+    .min(3, "Please enter a valid name (at least 3 characters)")
+    .max(50, "Name must be at most 50 characters"),
   age: z.coerce
     .number()
     .int()
@@ -49,7 +52,7 @@ export default function EditableTable() {
         setIsLoading(false);
       }
     };
-
+    //TODO: we can add pagination and filtering later
     fetchUsers();
   }, []);
 
@@ -311,7 +314,7 @@ export default function EditableTable() {
               >
                 <div className="flex flex-col items-center justify-center gap-2">
                   <Inbox className="w-6 h-6" />
-                  <span>No data available</span>
+                  <span>No data available yet</span>
                 </div>
               </td>
             </tr>
