@@ -12,7 +12,6 @@ export const getUsers = async () => {
 export const addUser = async (user) => {
   try {
     const response = await api.post("/api/v1/users", user);
-    console.log("response", response);
     return response.data;
   } catch (error) {
     throw new Error("Failed to add user: " + error.message);

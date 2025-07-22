@@ -2,6 +2,17 @@ import { useState, useEffect } from "react";
 import { Trash2, Inbox, Loader, Plus } from "lucide-react";
 import { getUsers, addUser } from "../services/users";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const userSchema = z.object({
+  name: z.string().min(5, "Please enter a valid name (at least 5 characters)"),
+  age: z.coerce
+    .number()
+    .int()
+    .gte(18, "Age must be at least 18")
+    .lte(100, "Age must be at most 100"),
+  email: z.email("Please enter a valid email address"),
+});
 
 const columns = [
   { key: "name", label: "Name", type: "text" },
@@ -49,8 +60,10 @@ export default function EditableTable() {
   };
 
   const saveNewRow = async () => {
-    if (!newRow.name.trim() || !newRow.email.trim() || !newRow.age) {
-      toast.error("Please fill in all fields");
+    const result = userSchema.safeParse(newRow);
+    if (!result.success) {
+      const firstError = result.error.issues[0].message;
+      toast.error(firstError);
       return;
     }
 
@@ -145,6 +158,7 @@ export default function EditableTable() {
                   className="px-4 py-3 border-b border-gray-200"
                 >
                   <input
+                    name={col.key}
                     type={col.type}
                     value={newRow[col.key]}
                     onChange={(e) => updateNewRow(col.key, e.target.value)}
