@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { Trash2, Inbox, Loader, Plus, TriangleAlert, Undo } from "lucide-react";
+import {
+  Trash2,
+  Inbox,
+  Loader,
+  Plus,
+  TriangleAlert,
+  Undo,
+  Redo,
+} from "lucide-react";
 import { getUsers, addUser, deleteUser } from "../services/users";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -27,6 +35,7 @@ export default function EditableTable() {
   const [newRow, setNewRow] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -48,7 +57,7 @@ export default function EditableTable() {
     //check if there's already a new row being added
     if (newRow) {
       toast.error(
-        "Please finish editing the current row before adding a new one."
+        "Please save or cancel the current new row before adding another."
       );
       return;
     }
@@ -67,6 +76,11 @@ export default function EditableTable() {
       toast.error(firstError);
       return;
     }
+    //check for duplicate email(this is only since i'm using mockapi. in a real scenario, this should be done on the server)
+    if (rows.some((row) => row.email === newRow.email.trim())) {
+      toast.error("Email already exists. Please use a different email.");
+      return;
+    }
 
     try {
       setIsSaving(true);
@@ -80,6 +94,7 @@ export default function EditableTable() {
       setRows((prevRows) => [savedUser, ...prevRows]);
       setUndoStack((prev) => [...prev, { type: "add", row: savedUser }]);
       setNewRow(null);
+      setRedoStack([]); //clear redo stack on new action
       toast.success("User added successfully!");
     } catch {
       toast.error("Failed to save user. Please try again.");
@@ -98,8 +113,9 @@ export default function EditableTable() {
       [field]: value,
     }));
   };
+
   const handleDeleteUser = (user) => {
-    toast(`Delete "${user.name}"?`, {
+    toast(`Delete "${user.name}"`, {
       description: "Are you sure you want to delete this user?",
       duration: 3000,
       icon: <TriangleAlert className="w-6 h-6 text-red-500" />,
@@ -111,6 +127,7 @@ export default function EditableTable() {
             await deleteUser(user.id);
             setRows((prevRows) => prevRows.filter((row) => row.id !== user.id));
             setUndoStack((prev) => [...prev, { type: "delete", row: user }]);
+            setRedoStack([]); //clear redo stack on new action
             toast.success("User deleted successfully!");
           } catch {
             toast.error("Failed to delete user. Please try again.");
@@ -121,16 +138,65 @@ export default function EditableTable() {
   };
 
   const handleUndo = async () => {
-    const lastAction = undoStack.pop();
-    if (!lastAction) return;
-    setUndoStack([...undoStack]);
+    if (undoStack.length === 0) return;
 
-    if (lastAction.type === "add") {
-      await deleteUser(lastAction.row.id);
-      setRows((prev) => prev.filter((row) => row.id !== lastAction.row.id));
-    } else if (lastAction.type === "delete") {
-      const response = await addUser(lastAction.row);
-      setRows((prev) => [response, ...prev]);
+    const lastAction = undoStack[undoStack.length - 1];
+    const newUndoStack = undoStack.slice(0, -1);
+    setUndoStack(newUndoStack);
+
+    try {
+      if (lastAction.type === "add") {
+        //undo add: delete the user
+        await deleteUser(lastAction.row.id);
+        setRows((prev) => prev.filter((row) => row.id !== lastAction.row.id));
+        //add to redo stack with opposite action
+        setRedoStack((prev) => [...prev, { type: "add", row: lastAction.row }]);
+        toast.success("Add action undone!");
+      } else if (lastAction.type === "delete") {
+        //undo delete: add the user back
+        const restoredUser = await addUser(lastAction.row);
+        setRows((prev) => [restoredUser, ...prev]);
+        //add to redo stack with opposite action
+        setRedoStack((prev) => [
+          ...prev,
+          { type: "delete", row: restoredUser },
+        ]);
+        toast.success("Delete action undone!");
+      }
+    } catch {
+      toast.error("Failed to undo action. Please try again.");
+      //restore undo stack if operation failed
+      setUndoStack(undoStack);
+    }
+  };
+
+  const handleRedo = async () => {
+    if (redoStack.length === 0) return;
+
+    const lastRedo = redoStack[redoStack.length - 1];
+    const newRedoStack = redoStack.slice(0, -1);
+    setRedoStack(newRedoStack);
+
+    try {
+      if (lastRedo.type === "add") {
+        //redo add: add the user back
+        const restoredUser = await addUser(lastRedo.row);
+        setRows((prev) => [restoredUser, ...prev]);
+        setUndoStack((prev) => [...prev, { type: "add", row: restoredUser }]);
+        toast.success("Add action redone!");
+      } else if (lastRedo.type === "delete") {
+        //redo delete: delete the user again
+        await deleteUser(lastRedo.row.id);
+        setRows((prev) => prev.filter((r) => r.id !== lastRedo.row.id));
+        setUndoStack((prev) => [
+          ...prev,
+          { type: "delete", row: lastRedo.row },
+        ]);
+        toast.success("Delete action redone!");
+      }
+    } catch {
+      toast.error("Failed to redo action. Please try again.");
+      setRedoStack(redoStack);
     }
   };
 
@@ -173,9 +239,16 @@ export default function EditableTable() {
         <button
           onClick={handleUndo}
           disabled={!undoStack.length}
-          className="bg-blue-600 text-white px-4 py-2 rounded bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <Undo className="inline-block w-4 h-4 mr-1" /> Undo
+        </button>
+        <button
+          onClick={handleRedo}
+          disabled={!redoStack.length}
+          className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          <Redo className="inline-block w-4 h-4 mr-1" /> Redo
         </button>
       </div>
 
@@ -255,7 +328,7 @@ export default function EditableTable() {
                 ))}
                 <td className="px-4 py-3 text-center border-b border-gray-200">
                   <button
-                    className="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 transition"
+                    className="text-red-600 px-3 py-1 rounded hover:bg-red-200 transition"
                     onClick={() => handleDeleteUser(row)}
                   >
                     <Trash2 className="inline-block w-4 h-4 cursor-pointer" />
