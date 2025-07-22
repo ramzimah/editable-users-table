@@ -217,9 +217,20 @@ export default function EditableTable() {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto p-4 sm:p-6 mt-4 sm:mt-10 bg-white shadow-lg rounded-2xl">
-        <div className="flex flex-col items-center justify-center py-20">
-          <div className="text-red-500 mb-4">❌</div>
-          <span className="text-red-600 text-center px-4">{error}</span>
+        <div className="flex flex-col items-center justify-center py-12 sm:py-20 px-4">
+          <div className="text-4xl sm:text-5xl mb-4 sm:mb-6">❌</div>
+          <h2 className="text-lg sm:text-xl font-semibold text-red-600 mb-2 text-center">
+            Oops!
+          </h2>
+          <span className="text-sm sm:text-base text-red-500 text-center mb-6 sm:mb-8 max-w-md leading-relaxed">
+            {error}
+          </span>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium text-sm sm:text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
