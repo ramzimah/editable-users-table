@@ -22,21 +22,21 @@ const columns = [
 
 export default function EditableTable() {
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [newRow, setNewRow] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        setLoading(true);
+        setIsLoading(true);
         const users = await getUsers();
         setRows(users);
       } catch (err) {
         setError("Something went wrong while fetching users.");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
@@ -68,8 +68,7 @@ export default function EditableTable() {
     }
 
     try {
-      setSaving(true);
-
+      setIsSaving(true);
       const savedUser = await addUser({
         name: newRow.name.trim(),
         email: newRow.email.trim(),
@@ -84,7 +83,7 @@ export default function EditableTable() {
       toast.error("Failed to save user. Please try again.");
       console.error("Save error:", err);
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
@@ -119,7 +118,7 @@ export default function EditableTable() {
     });
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto p-6 mt-10 bg-white shadow-lg rounded-2xl">
         <div className="flex flex-col items-center justify-center py-20">
@@ -184,7 +183,7 @@ export default function EditableTable() {
                     onChange={(e) => updateNewRow(col.key, e.target.value)}
                     placeholder={`Enter ${col.label}`}
                     className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                    disabled={saving}
+                    disabled={isSaving}
                   />
                 </td>
               ))}
@@ -192,14 +191,14 @@ export default function EditableTable() {
                 <div className="flex gap-2 justify-center">
                   <button
                     onClick={saveNewRow}
-                    disabled={saving}
+                    disabled={isSaving}
                     className="bg-green-100 text-green-600 px-3 py-1 rounded hover:bg-green-200 transition text-xs disabled:opacity-50"
                   >
-                    {saving ? "Saving..." : "Save"}
+                    {isSaving ? "Saving..." : "Save"}
                   </button>
                   <button
                     onClick={cancelNewRow}
-                    disabled={saving}
+                    disabled={isSaving}
                     className="bg-gray-100 text-gray-600 px-3 py-1 rounded hover:bg-gray-200 transition text-xs disabled:opacity-50"
                   >
                     Cancel
